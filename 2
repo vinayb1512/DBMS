@@ -1,0 +1,85 @@
+CREATE TABLE SUPPLIER (
+    Supplier_ID    INT PRIMARY KEY,
+    Supplier_name  VARCHAR(100),
+    Location       VARCHAR(100)
+);
+
+CREATE TABLE PRODUCT (
+    Prod_ID      INT PRIMARY KEY,
+    Prod_name    VARCHAR(50),
+    Unit_price   DECIMAL(10,2),
+    Discount     DECIMAL(5,2),
+    Supplier_ID  INT,
+    CHECK (Unit_price >= 100),
+    FOREIGN KEY (Supplier_ID) REFERENCES SUPPLIER (Supplier_ID) ON DELETE CASCADE
+);
+
+-- ---------- INSERT VALUES ----------
+
+INSERT INTO SUPPLIER VALUES
+    (101, 'ABC Suppliers', 'Bengaluru'),
+    (102, 'XYZ Traders', 'Mysuru'),
+    (103, 'PQR Enterprises', 'Mangaluru'),
+    (104, 'LMN Suppliers', 'Hubbali'),
+    (105, 'Global Traders', 'Chennai');
+
+INSERT INTO PRODUCT VALUES
+    (1, 'Laptop', 50000, 10, 101),
+    (2, 'Printer', 15000, 5, 102),
+    (3, 'Keyboard', 2000, 8, 101),
+    (4, 'Monitor', 12000, 12, 103),
+    (5, 'Webcam', 3000, 15, 102);
+
+SELECT * FROM SUPPLIER;
+SELECT * FROM PRODUCT;
+
+-- ---------- QUERIES ----------
+----(1)Ensure that the unit price of a product is never less than 100.
+
+CREATE TABLE PRODUCT_NEW (
+    PROD_ID INT PRIMARY KEY,
+    PROD_NAME VARCHAR2(50),
+    UNIT_PRICE DECIMAL(10,2),
+    DISCOUNT DECIMAL(5,2),
+    SUPPLIER_ID INT,
+    CHECK (UNIT_PRICE >= 100),
+    FOREIGN KEY (SUPPLIER_ID)
+        REFERENCES SUPPLIER(SUPPLIER_ID)
+        ON DELETE CASCADE
+);
+
+-- (ii) View with product name, unit price, discount % and final price
+
+CREATE VIEW PRODUCT_VIEW AS
+SELECT Prod_name, Unit_price, Discount,
+       Unit_price - (Unit_price * Discount / 100) AS Final_price
+FROM PRODUCT;
+
+SELECT * FROM PRODUCT_VIEW;
+
+-- (iii) Suppliers who supply at least one product costing more than 1000 (EXISTS)
+
+SELECT Supplier_name
+FROM SUPPLIER S
+WHERE EXISTS (
+    SELECT 1
+    FROM PRODUCT P
+    WHERE P.Supplier_ID = S.Supplier_ID
+      AND P.Unit_price > 1000
+);
+
+-- (iv) Products costing more than the average unit price, with supplier names
+
+SELECT P.Prod_name, S.Supplier_name
+FROM PRODUCT P, SUPPLIER S
+WHERE P.Supplier_ID = S.Supplier_ID
+  AND P.Unit_price > (SELECT AVG(Unit_price) FROM PRODUCT);
+
+
+-- (v) Top 3 products with the highest discount
+
+SELECT Prod_name, Unit_price, Discount
+FROM PRODUCT
+ORDER BY Discount DESC
+LIMIT 3;
+
