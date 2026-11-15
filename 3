@@ -1,0 +1,103 @@
+
+CREATE TABLE CUSTOMER (
+    Customer_ID  INT PRIMARY KEY,
+    Name         VARCHAR(20)
+);
+
+CREATE TABLE ACCOUNT (
+    Account_no  INT PRIMARY KEY,
+    Type        VARCHAR(20),
+    Balance     INT
+);
+
+CREATE TABLE ADDRESS (
+    Customer_ID  INT,
+    Street       VARCHAR(20),
+    City         VARCHAR(20),
+    State        VARCHAR(20),
+    PRIMARY KEY (Customer_ID, Street),
+    FOREIGN KEY (Customer_ID) REFERENCES CUSTOMER (Customer_ID) ON DELETE CASCADE
+);
+
+CREATE TABLE CUSTOMER_ACCOUNT (
+    Customer_ID  INT,
+    Account_no   INT,
+    Trans_date   DATE,
+    PRIMARY KEY (Customer_ID, Account_no),
+    FOREIGN KEY (Customer_ID) REFERENCES CUSTOMER (Customer_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Account_no) REFERENCES ACCOUNT (Account_no) ON DELETE CASCADE
+);
+
+-- ---------- INSERT VALUES ----------
+
+INSERT INTO CUSTOMER VALUES
+    (1, 'John'),
+    (2, 'Jane'),
+    (3, 'Smith'),
+    (4, 'Alice'),
+    (5, 'Brown');
+
+INSERT INTO ACCOUNT VALUES
+    (101, 'Savings', 6000),
+    (102, 'Checking', 8000),
+    (103, 'Savings', 12000),
+    (104, 'Checking', 9000),
+    (105, 'Savings', 11000);
+
+INSERT INTO ADDRESS VALUES
+    (1, 'Oak Street', 'Bangalore', 'Karnataka'),
+    (2, 'Main Street', 'Bangalore', 'Karnataka'),
+    (3, 'Pine Street', 'Mysore', 'Karnataka'),
+    (4, 'Elm Street', 'Bangalore', 'Karnataka'),
+    (4, 'Birch Street', 'Mysore', 'Karnataka'),
+    (5, 'Maple Street', 'Bangalore', 'Karnataka');
+
+INSERT INTO CUSTOMER_ACCOUNT VALUES
+    (1, 101, DATE '2023-01-01'),
+    (2, 101, DATE '2023-02-15'),
+    (2, 102, DATE '2023-03-10'),
+    (3, 103, DATE '2023-04-20'),
+    (4, 101, DATE '2023-05-05'),
+    (4, 102, DATE '2023-04-20'),
+    (4, 103, DATE '2023-02-15');
+
+-- ---------- QUERIES ----------
+
+-- (a) Add 5% interest to accounts with balance less than 10000
+
+SELECT * FROM ACCOUNT;
+
+UPDATE ACCOUNT
+SET Balance = Balance * 1.05
+WHERE Balance < 10000;
+
+SELECT * FROM ACCOUNT;
+
+-- (b) Customers who have at least 2 accounts
+
+SELECT Customer_ID
+FROM CUSTOMER_ACCOUNT
+GROUP BY Customer_ID
+HAVING COUNT(Customer_ID) >= 2;
+
+-- (c) Customers who have not done any transaction
+
+SELECT C.Customer_ID, Name
+FROM CUSTOMER C
+WHERE C.Customer_ID NOT IN (
+    SELECT CA.Customer_ID
+    FROM CUSTOMER_ACCOUNT CA
+);
+
+-- (e) Classify customers by total balance across all accounts
+
+SELECT C.Customer_ID, Name, SUM(Balance) AS Total_Balance,
+    CASE
+        WHEN SUM(Balance) < 3000 THEN 'Low Balance'
+        WHEN SUM(Balance) <= 10000 THEN 'Medium Balance'
+        WHEN SUM(Balance) > 10000 THEN 'High Balance'
+    END AS Balance_Category
+FROM CUSTOMER C, CUSTOMER_ACCOUNT CA, ACCOUNT A
+WHERE C.Customer_ID = CA.Customer_ID
+  AND CA.Account_no = A.Account_no
+GROUP BY C.Customer_ID, Name;
